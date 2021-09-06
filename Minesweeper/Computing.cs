@@ -199,6 +199,7 @@ namespace Minesweeper
                         break;
                 }
             }
+            Check_Win();
         }
         public void setflag(Coords pos)
         {
@@ -263,7 +264,7 @@ namespace Minesweeper
         }
         private bool Check_ifwin()
         {
-            int correct = 1;
+            int correct = 0;
             for (int i = 0; i < gridsize.X; i++)
             {
                 for (int j = 0; j < gridsize.Y; j++)
@@ -272,19 +273,16 @@ namespace Minesweeper
                     {
                         correct++;
                     }
-                    else if(Bomb_Grid[i, j] == 1 && Open_Grid[i, j] == 0 || Open_Grid[i, j] == 2)
-                    {
-                        correct++;
-                    }
                 }
             }
-            if (gridsize.X*gridsize.Y == correct) {
+            Console.WriteLine(correct + " " + Bomb_count());
+            if ((Bomb_count() + correct) == (gridsize.X*gridsize.Y)) {
                 return true;
             }return false;
         }
         public int Bomb_count()
         {
-            int correct = 1;
+            int correct = 0;
             for (int i = 0; i < gridsize.X; i++)
             {
                 for (int j = 0; j < gridsize.Y; j++)
@@ -296,6 +294,15 @@ namespace Minesweeper
                 }
             }
             return correct;
+        }
+        public void Reset(Sizes size,int mine)
+        {
+            gridsize = size;
+            SetBombGrid(new int[width_cap, height_cap], size);
+            Open_Grid = new int[width_cap, height_cap];
+            ODat_Grid = new int[width_cap, height_cap];
+            Ran_mine(mine);
+            Console.WriteLine("Resetted");
         }
     }
 }

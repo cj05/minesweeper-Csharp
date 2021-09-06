@@ -11,15 +11,10 @@ using Minesweeper;
 
 namespace Minesweeper
 {
-    public class ClickEventargs : EventArgs
-    {
-        public int X { get; set; }
-        public int Y { get; set; }
-        public MouseEventArgs E { get; set; }
-    }
     public partial class Minesweeper : Form
     {
         public event EventHandler<ClickEventargs> Button_click;
+        public event EventHandler<GridEventargs> Grid_Reset_Menu;
         public void Trigger_Button(object sender, ClickEventargs e)
         {
             EventHandler<ClickEventargs> Bu = Button_click;
@@ -42,8 +37,8 @@ namespace Minesweeper
         private int width_b = 0, height_b = 0, width_i = 0, height_i = 0;
         private double button_default_ratio = 0;
         private const int width_cap = 35, height_cap = 35;
-        private bool form_shown = false,Resizable = true,Resized = false,freeform = false;
-        public Button[,] Button_array =new Button[width_cap, height_cap]; // capped at 100, can change if needed
+        private bool form_shown = false,Resizable = true,Resized = false,freeform = false,Resetting = false;
+        public Button[,] Button_array =new Button[width_cap, height_cap]; // capped at 35, can change if needed
         public Minesweeper(int width_s = 20, int height_s = 20)
         {
             Console.WriteLine("Form- Init");
@@ -57,13 +52,31 @@ namespace Minesweeper
         {
             Console.WriteLine("Form- Form processed shown");
             form_shown = true;
-            init_array(width_i, height_i, 20, 20);
+            init_array(width_i, height_i, 40, 40);
             
             this.Text = "Minesweeper("+width_b+"x"+height_b+")";
             this.Layout += Size_change_handler;
             this.ResizeEnd += Resize_end_handler;
             this.ResizeBegin += Resize_begin_handler;
             this.Click += On_click_handler;
+        }
+        public void Reset(Sizes size)
+        {
+            Resetting = true;
+            for (int x_loop = 0; x_loop < width_b; x_loop++)
+            {
+                for (int y_loop = 0; y_loop < height_b; y_loop++)
+                {
+                    this.Controls.Remove(Button_array[x_loop, y_loop]);
+                }
+            }
+            Button_array = new Button[width_cap, height_cap];
+            width_i = size.X;
+            height_i = size.Y;
+            init_array(width_i, height_i, 40, 40);
+
+            this.Text = "Minesweeper(" + width_b + "x" + height_b + ")";
+            Resetting = false;
         }
         private void On_click_handler(object sender, EventArgs e)
         {
@@ -97,26 +110,88 @@ namespace Minesweeper
         }
         private void On_button_click_handler(object sender, MouseEventArgs e, Button b, int x, int y)
         {
-            Console.WriteLine("Button" + x + " " + y + " clicked ");
+            //Console.WriteLine("Button" + x + " " + y + " clicked ");
             ClickEventargs eo = new ClickEventargs();
             eo.E = e;
             eo.X = x;
             eo.Y = y;
             Trigger_Button(this,eo);
         }
+
+        private void listView1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+
+        private void controlsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void customToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            GridEventargs eo = new GridEventargs();
+            Form2 Dialog = new Form2();
+            // Show testDialog as a modal dialog and determine if DialogResult = OK.
+            if (Dialog.ShowDialog(this) == DialogResult.Cancel)
+            {
+                // Read the contents of testDialog's TextBox.
+                return;
+            }
+            
+            eo.E = e;
+            eo.Width = Dialog.W();
+            eo.Height = Dialog.H();
+            eo.Mine = Dialog.M();
+            Dialog.Dispose();
+            if( Grid_Reset_Menu != null ) Grid_Reset_Menu(this, eo);
+        }
+
+        private void beginner16x16With10BombsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            GridEventargs eo = new GridEventargs();
+            eo.E = e;
+            eo.Width = 8;
+            eo.Height = 8;
+            eo.Mine = 10;
+            if (Grid_Reset_Menu != null) Grid_Reset_Menu(this, eo);
+        }
+
+        private void advanced30x16With99MineToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            GridEventargs eo = new GridEventargs();
+            eo.E = e;
+            eo.Width = 30;
+            eo.Height = 16;
+            eo.Mine = 99;
+            if (Grid_Reset_Menu != null) Grid_Reset_Menu(this, eo);
+        }
+
+        private void intermidiate16x16With40MineToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            GridEventargs eo = new GridEventargs();
+            eo.E = e;
+            eo.Width = 16;
+            eo.Height = 16;
+            eo.Mine = 40;
+            if (Grid_Reset_Menu != null) Grid_Reset_Menu(this, eo);
+        }
+
         private void Size_change_handler(object sender, EventArgs e)
         {
             //MessageBox.Show("The size of the 'Button' control has changed");
             //Console.WriteLine(this.Width + " " + this.Height);
-            if (Resizable&&!Resized)
+            if (Resizable&&!Resized&&!Resetting)
             {
-                Resize_button(this.Width - 20, this.Height - 40);// top border and overlap
+                Resize_button(this.Width-20, this.Height-40);// top border and overlap
             }
         }
-        private void Resize_button(int width, int height)
+        private void Resize_button(int w, int h)
         {
-            int button_x = 0;
-            int button_y;
+            int button_x,button_y,offset_x = 0,offset_y = gameToolStripMenuItem.Size.Height;
+            int width = w-offset_x;
+            int height = h-offset_y;
             if (freeform)
             {
                 button_x = ((width - (width % width_b)) / width_b);
@@ -140,7 +215,7 @@ namespace Minesweeper
             {
                 for (int y_loop = 0; y_loop < height_b; y_loop++)
                 {
-                    Button_array[x_loop, y_loop].Location = new Point(x_loop * button_x, y_loop * button_y);
+                    Button_array[x_loop, y_loop].Location = new Point(x_loop * button_x+offset_x, y_loop * button_y+offset_y);
                     Button_array[x_loop, y_loop].Size = new Size(button_x, button_y);
                     if(Button_array[x_loop, y_loop].Image != null)
                     {
@@ -204,7 +279,7 @@ namespace Minesweeper
                 }
                 catch
                 {
-                    Console.WriteLine("Err:0x1: Window too small/hidden");
+                    Console.WriteLine("Window hidden");
                 }
             }
         }
@@ -261,6 +336,36 @@ namespace Minesweeper
                     break;
             }
         }
+        public bool LosePrompt()
+        {
+            Form1 Dialog = new Form1("You Lost");
+            // Show testDialog as a modal dialog and determine if DialogResult = OK.
+            if (Dialog.ShowDialog(this) == DialogResult.OK)
+            {
+                // Read the contents of testDialog's TextBox.
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+            Dialog.Dispose();
+        }
+        public bool WinPrompt()
+        {
+            Form1 Dialog = new Form1("You Win");
+            // Show testDialog as a modal dialog and determine if DialogResult = OK.
+            if (Dialog.ShowDialog(this) == DialogResult.OK)
+            {
+                // Read the contents of testDialog's TextBox.
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+            Dialog.Dispose();
+        }
 
     }
 
@@ -289,5 +394,18 @@ namespace Minesweeper
         public int Y { get; set; }
 
         public override string ToString() => $"({X}, {Y})";
+    }
+    public class ClickEventargs : EventArgs
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        public MouseEventArgs E { get; set; }
+    }
+    public class GridEventargs : EventArgs
+    {
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public int Mine { get; set; }
+        public EventArgs E { get; set; }
     }
 }

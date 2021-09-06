@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace Minesweeper
@@ -30,14 +31,18 @@ namespace Minesweeper
             script.Lose += Lose;
             ms.Button_array_click(Clicked);
             ms.Shown += Shown;
+            ms.Grid_Reset_Menu += Change_Grid;
             Application.Run(ms);
         }
         static void Clicked(object sender,ClickEventargs e)
         {
-            Console.WriteLine("Button" + e.X + " " + e.Y + " clicked recieved ");
+            //Console.WriteLine("Button" + e.X + " " + e.Y + " clicked recieved ");
             if (e.E.Button == System.Windows.Forms.MouseButtons.Left)
             {
-                script.Open_at(new Coords(e.X, e.Y), Grid_size);
+                if (script.Open_Array(Grid_size)[e.X, e.Y] == 0)
+                {
+                    script.Open_at(new Coords(e.X, e.Y), Grid_size);
+                }
             }
             else if (e.E.Button == System.Windows.Forms.MouseButtons.Right)
             {
@@ -123,11 +128,34 @@ namespace Minesweeper
         static void Win(object sender, EventArgs e)
         {
             Console.WriteLine("Win");
+            if (ms.WinPrompt())
+            {
+                script.Reset(Grid_size, mines);
+                lost = false;
+                Update();
+            }
+        }
+        static void Change_Grid(object sender, GridEventargs e)
+        {
+            Console.WriteLine("Reset Grid");
+            script.Reset(new Sizes(e.Width,e.Height), e.Mine);
+            ms.Reset(new Sizes(e.Width, e.Height));
+            lost = false;
+            mines = e.Mine;
+            Grid_size = new Sizes(e.Width, e.Height);
+            Update();
         }
         static void Lose(object sender, EventArgs e)
         {
             Console.WriteLine("Lost");
             Reveal_Bomb();
+            Thread.Sleep(500);
+            if(ms.LosePrompt())
+            {
+                script.Reset(Grid_size,mines);
+                lost = false;
+                Update();
+            }
         }
     }
 }
