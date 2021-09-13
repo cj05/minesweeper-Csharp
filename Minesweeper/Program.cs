@@ -123,6 +123,8 @@ namespace Minesweeper
         static void Shown(object sender, EventArgs e)
         {
             script.Ran_mine(mines);
+            ms.Select_item_Fill_mode(script.Get_fill_mode());
+            ms.Fill_Mode_clicked += Fill;
             Update();
         }
         static void Win(object sender, EventArgs e)
@@ -134,6 +136,11 @@ namespace Minesweeper
                 lost = false;
                 Update();
             }
+        }
+        static void Fill(object sender, Intevent e)
+        {
+            Console.WriteLine(e.i);
+            script.Set_fill_mode(e.i);
         }
         static void Change_Grid(object sender, GridEventargs e)
         {

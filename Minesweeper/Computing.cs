@@ -7,7 +7,7 @@ namespace Minesweeper
     {
         public event EventHandler Win;
         public event EventHandler Lose;
-        private int Fill_type = 0;
+        private int Fill_type = 1;
         /*0 = recursive flood fill,1 = queue flood fill*/
         private const int width_cap = 35, height_cap = 35;
         private int[,] Bomb_Grid = new int[width_cap, height_cap];
@@ -15,6 +15,14 @@ namespace Minesweeper
         private int[,] ODat_Grid = new int[width_cap, height_cap];
         private Random Rand = new Random();
         Sizes gridsize;
+        public int Get_fill_mode()
+        {
+            return Fill_type;
+        }
+        public void Set_fill_mode(int i)
+        {
+            Fill_type = i;
+        }
         public int[,] Bomb_Array(Sizes size)
         {
             return Resize_2darray(Bomb_Grid,size);
@@ -149,7 +157,7 @@ namespace Minesweeper
         }
         public void Open_at(Coords pos, Sizes size,bool isrecur = false)
         {
-            Coords[] queue = {};
+            Coords[] queue = { };//over flow limit
             //Console.Write(pos.ToString());
             if (Verify_Coordinates(pos, size)) 
             {
@@ -187,12 +195,45 @@ namespace Minesweeper
                         }
                         break;
                     case 1:
-                        queue[0] = pos;
-                        while (queue.Length != 0)
+                        Append(ref queue,pos);
+                        Console.WriteLine(queue[0].ToString());
+                        while (queue.Length > 0)
                         {
                             Coords cpos = queue[queue.Length - 1];
+                            Console.WriteLine(queue[queue.Length - 1].ToString());
                             Array.Resize(ref queue, queue.Length - 1);
+                            if (Check_isBomb(cpos))
+                            {
+                                if (!isrecur)
+                                {
+                                    if (Lose != null) Lose(this, EventArgs.Empty);
+                                    Console.WriteLine("Boom");
+                                }
+                                break;//alert
+                            }
+                            if (!Check_isOpen(cpos))
+                            {
+                                continue;
+                            }
 
+                            ODat_Grid[cpos.X, cpos.Y] = Check_BombSurround(cpos);
+                            Open_Grid[cpos.X, cpos.Y] = 1;
+
+                            if (Check_BombSurround(cpos) == 0)
+                            {
+                                Console.WriteLine("rec");
+                                Append(ref queue, new Coords(cpos.X - 1, cpos.Y));
+                                Append(ref queue, new Coords(cpos.X, cpos.Y - 1));
+                                Append(ref queue, new Coords(cpos.X + 1, cpos.Y));
+                                Append(ref queue, new Coords(cpos.X, cpos.Y + 1));
+                                Append(ref queue, new Coords(cpos.X - 1, cpos.Y + 1));
+                                Append(ref queue, new Coords(cpos.X - 1, cpos.Y - 1));
+                                Append(ref queue, new Coords(cpos.X + 1, cpos.Y + 1));
+                                Append(ref queue, new Coords(cpos.X + 1, cpos.Y - 1));
+                                Console.WriteLine(queue.Length);
+                                //queue loop
+                            }
+                            isrecur = true;
                         }
                         break;
                     default:
@@ -200,6 +241,12 @@ namespace Minesweeper
                 }
             }
             Check_Win();
+        }
+        private void Append(ref Coords[] c, Coords d)
+        {
+            Console.WriteLine(d.ToString());
+            Array.Resize(ref c, c.Length + 1);
+            c[c.Length - 1] = d;
         }
         public void setflag(Coords pos)
         {

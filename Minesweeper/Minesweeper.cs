@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -15,6 +16,8 @@ namespace Minesweeper
     {
         public event EventHandler<ClickEventargs> Button_click;
         public event EventHandler<GridEventargs> Grid_Reset_Menu;
+        public event EventHandler<Intevent> Fill_Mode_clicked;
+        private Stopwatch watch;
         public void Trigger_Button(object sender, ClickEventargs e)
         {
             EventHandler<ClickEventargs> Bu = Button_click;
@@ -59,9 +62,30 @@ namespace Minesweeper
             this.ResizeEnd += Resize_end_handler;
             this.ResizeBegin += Resize_begin_handler;
             this.Click += On_click_handler;
+            this.toolStripComboBox1.Items.Add("Recursive");
+            this.toolStripComboBox1.Items.Add("Queue");
+            this.toolStripComboBox1.SelectedIndexChanged += Fill_mode_index_change;
+            watch = new Stopwatch();
+            watch.Start();
+        }
+        public void Select_item_Fill_mode(int i)
+        {
+            this.toolStripComboBox1.SelectedIndex = i;
+        }
+        public int Get_item_Fill_mode()
+        {
+            return this.toolStripComboBox1.SelectedIndex;
+        }
+        private void Fill_mode_index_change(object o,EventArgs e)
+        {
+            Intevent eo = new Intevent();
+            eo.i = Get_item_Fill_mode();
+            eo.E = e;
+            if (Fill_Mode_clicked != null) Fill_Mode_clicked(this, eo);
         }
         public void Reset(Sizes size)
         {
+            watch.Reset();
             Resetting = true;
             for (int x_loop = 0; x_loop < width_b; x_loop++)
             {
@@ -77,6 +101,7 @@ namespace Minesweeper
 
             this.Text = "Minesweeper(" + width_b + "x" + height_b + ")";
             Resetting = false;
+            watch.Start();
         }
         private void On_click_handler(object sender, EventArgs e)
         {
@@ -187,9 +212,35 @@ namespace Minesweeper
                 Resize_button(this.Width-20, this.Height-40);// top border and overlap
             }
         }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            label1.Text = String.Format("{0:00.0}",watch.Elapsed.TotalSeconds);
+        }
+
+        private void uIToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void toolStripComboBox1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void fillModeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void toolStripComboBox2_Click(object sender, EventArgs e)
+        {
+
+        }
+
         private void Resize_button(int w, int h)
         {
-            int button_x,button_y,offset_x = 0,offset_y = gameToolStripMenuItem.Size.Height;
+            int button_x,button_y,offset_x = 0,offset_y = label1.Location.Y+label1.Size.Height;
             int width = w-offset_x;
             int height = h-offset_y;
             if (freeform)
@@ -338,33 +389,43 @@ namespace Minesweeper
         }
         public bool LosePrompt()
         {
+            watch.Stop();
             Form1 Dialog = new Form1("You Lost");
             // Show testDialog as a modal dialog and determine if DialogResult = OK.
             if (Dialog.ShowDialog(this) == DialogResult.OK)
             {
+                watch.Reset();
+                watch.Start();
                 // Read the contents of testDialog's TextBox.
                 return true;
             }
             else
             {
+                watch.Reset();
+                watch.Start();
                 return false;
             }
-            Dialog.Dispose();
         }
         public bool WinPrompt()
         {
+            watch.Stop();
             Form1 Dialog = new Form1("You Win");
             // Show testDialog as a modal dialog and determine if DialogResult = OK.
             if (Dialog.ShowDialog(this) == DialogResult.OK)
             {
+                watch.Reset();
+                watch.Start();
                 // Read the contents of testDialog's TextBox.
                 return true;
             }
             else
             {
+                watch.Reset();
+                watch.Start();
                 return false;
             }
             Dialog.Dispose();
+            
         }
 
     }
@@ -406,6 +467,11 @@ namespace Minesweeper
         public int Width { get; set; }
         public int Height { get; set; }
         public int Mine { get; set; }
+        public EventArgs E { get; set; }
+    }
+    public class Intevent : EventArgs
+    {
+        public int i { get; set; }
         public EventArgs E { get; set; }
     }
 }
